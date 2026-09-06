@@ -100,6 +100,12 @@ export interface InstagramMediaInsights {
   saved?: number;
   shares?: number;
   total_interactions?: number;
+  /** Reels only. Milliseconds, per Meta's documented unit for this metric. */
+  ig_reels_avg_watch_time?: number;
+  /** Reels only. Milliseconds. */
+  ig_reels_video_view_total_time?: number;
+  /** Reels only. Percentage (0-100) of viewers who dropped off in the first 3s. */
+  reels_skip_rate?: number;
 }
 
 interface TokenResponse {

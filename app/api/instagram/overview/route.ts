@@ -62,6 +62,12 @@ export interface OverviewPost {
   comments: number;
   saved: number | null;
   shares: number | null;
+  /** Reels only, from ig_reels_avg_watch_time (Meta returns ms; converted to seconds). */
+  avgWatchTimeSec: number | null;
+  /** Reels only, from ig_reels_video_view_total_time (ms, converted to seconds). */
+  totalWatchTimeSec: number | null;
+  /** Reels only — share of views that dropped off in the first 3 seconds, 0-100. */
+  skipRatePct: number | null;
 }
 
 export interface OverviewResponse {
@@ -94,6 +100,10 @@ function isVideoLike(media: InstagramMedia): boolean {
   return (
     media.media_product_type === "REELS" || media.media_type === "VIDEO"
   );
+}
+
+function isReel(media: InstagramMedia): boolean {
+  return media.media_product_type === "REELS";
 }
 
 export async function GET(request: NextRequest) {
@@ -152,9 +162,20 @@ export async function GET(request: NextRequest) {
       media,
       INSIGHTS_CONCURRENCY,
       async (m) => {
-        const metrics = isVideoLike(m)
-          ? ["views", "reach", "saved", "shares", "total_interactions"]
-          : ["reach", "saved", "shares", "total_interactions"];
+        const metrics = isReel(m)
+          ? [
+              "views",
+              "reach",
+              "saved",
+              "shares",
+              "total_interactions",
+              "ig_reels_avg_watch_time",
+              "ig_reels_video_view_total_time",
+              "reels_skip_rate",
+            ]
+          : isVideoLike(m)
+            ? ["views", "reach", "saved", "shares", "total_interactions"]
+            : ["reach", "saved", "shares", "total_interactions"];
         try {
           const data = await getMediaInsights(accessToken, m.id, metrics);
           insightsAvailable = true;
@@ -183,6 +204,15 @@ export async function GET(request: NextRequest) {
         comments,
         saved: ins?.saved ?? null,
         shares: ins?.shares ?? null,
+        avgWatchTimeSec:
+          ins?.ig_reels_avg_watch_time != null
+            ? Math.round(ins.ig_reels_avg_watch_time / 1000)
+            : null,
+        totalWatchTimeSec:
+          ins?.ig_reels_video_view_total_time != null
+            ? Math.round(ins.ig_reels_video_view_total_time / 1000)
+            : null,
+        skipRatePct: ins?.reels_skip_rate ?? null,
       };
     });
 
