@@ -91,13 +91,12 @@ function ChartTooltip({
 
 export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] }) {
   const [showTable, setShowTable] = useState(false);
+  const [selected, setSelected] = useState<ReelInsightPoint | null>(null);
 
   const chronological = [...data].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
   const worstFirst = [...data].sort((a, b) => b.skipRatePct - a.skipRatePct);
-  const avgSkip =
-    data.reduce((sum, p) => sum + p.skipRatePct, 0) / (data.length || 1);
 
   return (
     <div className="panel rounded p-4 sm:p-6">
@@ -107,14 +106,7 @@ export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] 
             Reels chuqur tahlili
           </h2>
           <p className="mt-1 text-sm text-muted">
-            O'rtacha{" "}
-            <span
-              className="font-semibold"
-              style={{ color: barColor(avgSkip) }}
-            >
-              {avgSkip.toFixed(0)}%
-            </span>{" "}
-            birinchi 3 soniyada tashlab ketadi — past ustunlar yaxshi natija.
+            Har bir reel — ustunga (yoki qatorga) bosib batafsilini ko'ring.
           </p>
         </div>
         <button
@@ -125,6 +117,66 @@ export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] 
           {showTable ? "Diagrammani ko'rsatish" : "Jadvalni ko'rsatish"}
         </button>
       </div>
+
+      {selected && (
+        <div className="mt-4 rounded-xl border border-border bg-surface-hover/40 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {selected.permalink ? (
+                <a
+                  href={selected.permalink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate font-medium text-foreground hover:text-accent"
+                >
+                  {selected.caption || "Reel"}
+                </a>
+              ) : (
+                <p className="truncate font-medium text-foreground">
+                  {selected.caption || "Reel"}
+                </p>
+              )}
+              <p className="text-xs text-muted">{formatDay(selected.timestamp)}</p>
+            </div>
+            <button
+              onClick={() => setSelected(null)}
+              className="text-muted hover:text-foreground"
+              aria-label="Yopish"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <p className="text-xs text-muted">3s'da tashlab ketish</p>
+              <p
+                className="text-lg font-semibold"
+                style={{ color: barColor(selected.skipRatePct) }}
+              >
+                {selected.skipRatePct.toFixed(0)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">O'rtacha ko'rish</p>
+              <p className="text-lg font-semibold text-foreground">
+                {formatSeconds(selected.avgWatchTimeSec)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Umumiy ko'rish</p>
+              <p className="text-lg font-semibold text-foreground">
+                {formatSeconds(selected.totalWatchTimeSec)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">Ko'rishlar</p>
+              <p className="text-lg font-semibold text-foreground">
+                {formatNumber(selected.views)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showTable ? (
         <div className="mt-4 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -141,13 +193,18 @@ export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] 
             </thead>
             <tbody>
               {worstFirst.map((p) => (
-                <tr key={p.id} className="border-b border-border last:border-0">
+                <tr
+                  key={p.id}
+                  onClick={() => setSelected(p)}
+                  className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-hover"
+                >
                   <td className="py-3 pr-4 max-w-xs">
                     {p.permalink ? (
                       <a
                         href={p.permalink}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="text-foreground hover:text-accent truncate block"
                       >
                         {p.caption || "Reel"}
@@ -206,7 +263,16 @@ export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] 
                 domain={[0, 100]}
               />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
-              <Bar dataKey="skipRatePct" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+              <Bar
+                dataKey="skipRatePct"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={false}
+                cursor="pointer"
+                onClick={(entry: unknown) => {
+                  const point = (entry as { payload?: ReelInsightPoint })?.payload;
+                  if (point) setSelected(point);
+                }}
+              >
                 {chronological.map((p) => (
                   <Cell key={p.id} fill={barColor(p.skipRatePct)} />
                 ))}
