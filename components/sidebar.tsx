@@ -8,15 +8,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  BarChart3,
+  Inbox,
+  Megaphone,
+  ScrollText,
+  Settings,
+  Stethoscope,
+} from "lucide-react";
 
 const navItems = [
-  { label: "Boshqaruv paneli", href: "/dashboard" },
-  { label: "Umumiy ko'rinish", href: "/overview" },
-  { label: "Kiruvchi xabarlar", href: "/inbox" },
-  { label: "Kampaniyalar", href: "/campaigns" },
-  { label: "DM jurnali", href: "/logs" },
-  { label: "Sozlamalar", href: "/settings" },
-  { label: "Diagnostika", href: "/diagnostics" },
+  { label: "Boshqaruv paneli", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Umumiy ko'rinish", href: "/overview", icon: BarChart3 },
+  { label: "Kiruvchi xabarlar", href: "/inbox", icon: Inbox },
+  { label: "Kampaniyalar", href: "/campaigns", icon: Megaphone },
+  { label: "DM jurnali", href: "/logs", icon: ScrollText },
+  { label: "Sozlamalar", href: "/settings", icon: Settings },
+  { label: "Diagnostika", href: "/diagnostics", icon: Stethoscope },
 ];
 
 interface SidebarProps {
@@ -65,6 +74,7 @@ export default function Sidebar({
           {navItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -72,7 +82,7 @@ export default function Sidebar({
                 onClick={onClose}
                 aria-current={isActive ? "page" : undefined}
                 className={`
-                  block px-3 py-2.5 rounded text-sm
+                  flex items-center gap-3 px-3 py-2.5 rounded text-sm
                   ${
                     isActive
                       ? "bg-surface-hover text-foreground font-medium"
@@ -80,6 +90,7 @@ export default function Sidebar({
                   }
                 `}
               >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
                 {item.label}
               </Link>
             );
