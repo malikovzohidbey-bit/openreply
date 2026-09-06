@@ -765,6 +765,82 @@ export async function subscribeInstagramAccountToWebhooks(
   return handleResponse(response);
 }
 
+// --- Content Publishing (avtopost) ---------------------------------------
+
+export interface MediaContainerParams {
+  imageUrl?: string;
+  videoUrl?: string;
+  caption?: string;
+  /** REELS for short-form video; omit for a plain feed image/video. */
+  mediaType?: "REELS";
+}
+
+/**
+ * Create a media container — step 1 of Instagram's two-step publish flow.
+ * `imageUrl`/`videoUrl` must be publicly reachable HTTPS URLs; Instagram's
+ * servers fetch the file themselves rather than accepting an upload body.
+ */
+export async function createMediaContainer(
+  accessToken: string,
+  igUserId: string,
+  params: MediaContainerParams
+): Promise<{ id: string }> {
+  const body: Record<string, string> = {};
+  if (params.imageUrl) body.image_url = params.imageUrl;
+  if (params.videoUrl) body.video_url = params.videoUrl;
+  if (params.mediaType) body.media_type = params.mediaType;
+  if (params.caption) body.caption = params.caption;
+
+  const response = await fetch(`${instagramGraphBase()}/${igUserId}/media`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  return handleResponse(response);
+}
+
+/**
+ * Poll a container's processing status. Videos/reels need Instagram time to
+ * transcode before they can be published — `FINISHED` means ready,
+ * `IN_PROGRESS` means keep waiting, anything else is a terminal failure.
+ */
+export async function getContainerStatus(
+  accessToken: string,
+  containerId: string
+): Promise<{ status_code: string; status?: string }> {
+  const url = new URL(`${instagramGraphBase()}/${containerId}`);
+  url.searchParams.set("fields", "status_code,status");
+  url.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(url.toString());
+  return handleResponse(response);
+}
+
+/** Publish a ready container — step 2 of the two-step publish flow. */
+export async function publishMediaContainer(
+  accessToken: string,
+  igUserId: string,
+  creationId: string
+): Promise<{ id: string }> {
+  const response = await fetch(
+    `${instagramGraphBase()}/${igUserId}/media_publish`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ creation_id: creationId }),
+    }
+  );
+
+  return handleResponse(response);
+}
+
 export async function debugToken(inputToken: string, accessToken: string) {
   const url = new URL(`${facebookGraphBase()}/debug_token`);
   url.searchParams.set("input_token", inputToken);

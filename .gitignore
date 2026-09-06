@@ -43,3 +43,7 @@ next-env.d.ts
 
 /app/generated/prisma
 .gstack/
+
+# user-uploaded avtopost media (served from /public, not part of the repo)
+/public/uploads/*
+!/public/uploads/.gitkeep

@@ -84,6 +84,7 @@ model Workspace {
   linkClicks        LinkClick[]
   webhookEvents     WebhookEvent[]
   operationalEvents OperationalEvent[]
+  posts             Post[]
 
   @@index([ownerId])
 }
@@ -141,8 +142,38 @@ model InstagramAccount {
   dmLogs      DmLog[]
   linkClicks  LinkClick[]
   followerSnapshots FollowerSnapshot[]
+  posts       Post[]
 
   @@index([workspaceId])
+}
+
+/// A user-composed piece of content headed to Instagram: posted immediately or
+/// scheduled for a future time. `filePath` is a path under the app's public
+/// uploads directory (served as a public URL, which Instagram's Content
+/// Publishing API requires as image_url/video_url).
+model Post {
+  id                 String     @id @default(cuid())
+  workspaceId        String
+  instagramAccountId String
+  mediaType          PostMediaType
+  filePath           String
+  caption            String?
+  status             PostStatus @default(SCHEDULED)
+  scheduledAt        DateTime
+  publishedAt        DateTime?
+  igMediaId          String?
+  containerId        String?
+  errorMessage       String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  instagramAccount InstagramAccount @relation(fields: [instagramAccountId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([instagramAccountId])
+  @@index([status])
+  @@index([scheduledAt])
 }
 
 /// Daily follower total for one account. Instagram only retains ~30 days of
@@ -368,6 +399,19 @@ enum DmStatus {
 enum WebhookStatus {
   PENDING
   PROCESSED
+  FAILED
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
+  REEL
+}
+
+enum PostStatus {
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
   FAILED
 }
 
