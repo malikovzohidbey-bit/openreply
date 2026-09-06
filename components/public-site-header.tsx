@@ -5,10 +5,10 @@ interface PublicSiteHeaderProps {
 }
 
 const navLinks = [
-  { label: "Templates", href: "/templates", key: "templates" },
-  { label: "Agencies", href: "/instagram-dm-automation-agencies", key: "agencies" },
-  { label: "Pricing", href: "/#pricing", key: "pricing" },
-  { label: "Security", href: "/#security", key: "security" },
+  { label: "Shablonlar", href: "/templates", key: "templates" },
+  { label: "Agentliklar", href: "/instagram-dm-automation-agencies", key: "agencies" },
+  { label: "Narxlar", href: "/#pricing", key: "pricing" },
+  { label: "Xavfsizlik", href: "/#security", key: "security" },
 ];
 
 export default function PublicSiteHeader({ active }: PublicSiteHeaderProps) {
@@ -38,13 +38,13 @@ export default function PublicSiteHeader({ active }: PublicSiteHeaderProps) {
             href="/login"
             className="hidden px-4 py-2 text-sm font-semibold text-zinc-300 transition hover:text-white sm:inline-flex"
           >
-            Sign in
+            Kirish
           </Link>
           <Link
             href="/login"
             className="inline-flex items-center justify-center bg-cyan-300 px-4 py-2 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
           >
-            Start free
+            Bepul boshlash
           </Link>
         </div>
       </div>

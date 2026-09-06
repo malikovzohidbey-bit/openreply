@@ -55,14 +55,14 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
                 href="/templates"
                 className="inline-flex items-center justify-center border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/[0.08]"
               >
-                {config.secondaryCta ?? "Browse templates"}
+                {config.secondaryCta ?? "Shablonlarni ko'rish"}
               </Link>
             </div>
           </div>
 
           <div className="border border-white/10 bg-white/[0.035] p-6">
             <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
-              Campaign OS checklist
+              Kampaniya nazorat ro'yxati
             </p>
             <ul className="mt-5 space-y-4">
               {config.bullets.map((bullet) => (
@@ -91,9 +91,9 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
           <h2 className="text-4xl font-black text-white">{config.comparisonTitle}</h2>
           <div className="mt-8 overflow-hidden border border-white/10">
             <div className="grid grid-cols-[0.8fr_1fr_1fr] border-b border-white/10 bg-zinc-950 text-xs font-bold uppercase tracking-wide text-zinc-500">
-              <div className="p-4">Need</div>
+              <div className="p-4">Ehtiyoj</div>
               <div className="p-4 text-cyan-100">OpenReply</div>
-              <div className="p-4">Generic automation</div>
+              <div className="p-4">Oddiy avtomatlashtirish</div>
             </div>
             {config.comparisons.map((item) => (
               <div
@@ -118,14 +118,14 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
         <div>
           <p className="text-sm font-bold uppercase text-emerald-200">
-            Start from a template
+            Shablondan boshlang
           </p>
           <h2 className="mt-3 text-4xl font-black text-white">
-            Launch a campaign faster than building a chatbot flow
+            Kampaniyani chatbot oqimi qurishdan tezroq ishga tushiring
           </h2>
           <p className="mt-5 text-sm leading-7 text-zinc-400">
-            Use a campaign template, connect the right Instagram account, pick
-            the post, and ship a measurable comment-to-DM loop.
+            Kampaniya shabloniga o'ting, kerakli Instagram hisobini ulang,
+            postni tanlang va o'lchanadigan izoh-DM oqimini ishga tushiring.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -144,9 +144,9 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
       <section className="border-t border-white/10 bg-zinc-950/70 py-16">
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
           <div>
-            <p className="text-sm font-bold uppercase text-cyan-200">FAQ</p>
+            <p className="text-sm font-bold uppercase text-cyan-200">Savol-javob</p>
             <h2 className="mt-3 text-4xl font-black text-white">
-              Search questions, answered clearly
+              Ko'p beriladigan savollarga aniq javoblar
             </h2>
           </div>
           <div className="grid gap-3">
@@ -163,17 +163,18 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
       <section className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-6 lg:px-8">
         <div className="border border-cyan-200/20 bg-cyan-300/10 p-8 text-center">
           <h2 className="text-4xl font-black text-white">
-            Turn the next high-intent comment into a private reply
+            Keyingi qiziqarli izohni shaxsiy xabarga aylantiring
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-            OpenReply is built for Instagram professional accounts, official
-            Meta private replies, and campaign reporting teams can show clients.
+            OpenReply Instagram professional hisoblari, rasmiy Meta shaxsiy
+            xabarlari va mijozlarga ko'rsatsa bo'ladigan kampaniya hisobotlari
+            uchun yaratilgan.
           </p>
           <Link
             href="/login"
             className="mt-8 inline-flex items-center justify-center bg-cyan-300 px-6 py-3 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
           >
-            Start free
+            Bepul boshlash
           </Link>
         </div>
       </section>

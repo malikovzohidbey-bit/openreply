@@ -42,7 +42,7 @@ export default function ImportCampaignsPage() {
     setError(null);
     const parsed = parseCsv(csv);
     if (parsed.length === 0) {
-      setError("Paste a CSV with a header row and at least one campaign.");
+      setError("Sarlavha qatori va kamida bitta kampaniyasi bo'lgan CSV joylashtiring.");
       return;
     }
 
@@ -56,7 +56,7 @@ export default function ImportCampaignsPage() {
         .slice(0, 10);
       const dmMessage = (r.dm_message ?? r.message ?? "").trim();
       if (keywords.length === 0 || !dmMessage) {
-        setError(`Row ${i + 1} is missing keywords or a message.`);
+        setError(`${i + 1}-qatorda kalit so'z yoki xabar yo'q.`);
         return;
       }
       rows.push({
@@ -76,7 +76,7 @@ export default function ImportCampaignsPage() {
         window.localStorage.setItem(IMPORT_ACCOUNT_KEY, selectedAccountId);
       }
     } catch {
-      setError("Could not stage the import in this browser.");
+      setError("Bu brauzerda import tayyorlab bo'lmadi.");
       return;
     }
     router.push("/campaigns/new");
@@ -85,21 +85,22 @@ export default function ImportCampaignsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-lg font-semibold">Import campaigns</h1>
+        <h1 className="text-lg font-semibold">Kampaniyalarni import qilish</h1>
         <p className="text-sm text-muted mt-1">
-          Paste a CSV with one row per campaign. Each row opens in the builder
-          prefilled and editable, so you can review it and pick the reel before
-          saving. Required columns are{" "}
-          <code className="text-accent">keywords</code> and{" "}
-          <code className="text-accent">dm_message</code>. Optional:{" "}
+          Har bir kampaniya uchun bitta qator bo'lgan CSV joylashtiring. Har bir
+          qator konstruktorda oldindan to'ldirilgan va tahrirlanadigan holda
+          ochiladi, shunda saqlashdan oldin uni ko'rib chiqib, reelini tanlashingiz
+          mumkin. Majburiy ustunlar:{" "}
+          <code className="text-accent">keywords</code> va{" "}
+          <code className="text-accent">dm_message</code>. Ixtiyoriy:{" "}
           <code className="text-accent">name</code>,{" "}
           <code className="text-accent">public_reply</code>,{" "}
           <code className="text-accent">tracked_url</code>,{" "}
           <code className="text-accent">opening_dm</code>,{" "}
-          <code className="text-accent">opening_dm_button</code>. Keywords go in
-          one cell, separated by commas. Use{" "}
-          <code className="text-accent">{"{link}"}</code> in the message to
-          insert the tracked link.
+          <code className="text-accent">opening_dm_button</code>. Kalit so'zlar
+          vergul bilan ajratilgan holda bitta katakchada bo'ladi. Kuzatiluvchi
+          havolani qo'shish uchun xabarda{" "}
+          <code className="text-accent">{"{link}"}</code> dan foydalaning.
         </p>
       </div>
 
@@ -112,14 +113,14 @@ export default function ImportCampaignsPage() {
       {accounts.length > 1 && (
         <div className="space-y-2">
           <label className="block text-sm font-medium text-foreground">
-            Instagram account
+            Instagram akkaunti
           </label>
           <AccountSelect
             accounts={accounts}
             value={selectedAccountId}
             onChange={setSelectedAccountId}
             includeAll={false}
-            label="Account"
+            label="Akkaunt"
           />
         </div>
       )}
@@ -138,7 +139,7 @@ export default function ImportCampaignsPage() {
           onClick={() => setCsv(SAMPLE)}
           className="text-xs text-muted hover:text-foreground"
         >
-          Fill with a sample
+          Namuna bilan to'ldirish
         </button>
       </div>
 
@@ -147,13 +148,13 @@ export default function ImportCampaignsPage() {
           onClick={startImport}
           className="px-5 py-2 rounded bg-accent text-sm font-medium text-white hover:bg-accent-hover"
         >
-          Review and import
+          Ko'rib chiqish va import qilish
         </button>
         <button
           onClick={() => router.push("/campaigns")}
           className="px-5 py-2 rounded text-sm text-muted hover:text-foreground border border-border"
         >
-          Cancel
+          Bekor qilish
         </button>
       </div>
     </div>

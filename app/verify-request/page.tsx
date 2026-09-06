@@ -16,14 +16,14 @@ export default function VerifyRequestPage() {
         </div>
 
         <div className="panel rounded p-8 text-center">
-          <h2 className="text-lg font-semibold mb-2">Check your email</h2>
+          <h2 className="text-lg font-semibold mb-2">Emailingizni tekshiring</h2>
           <p className="text-sm text-muted">
-            We sent you a secure sign-in link. Open it on this device to
-            continue.
+            Sizga xavfsiz kirish havolasini yubordik. Davom etish uchun
+            uni shu qurilmada oching.
           </p>
           <p className="mt-6 text-sm">
             <Link href="/login" className="text-accent hover:underline">
-              Back to sign in
+              Kirish sahifasiga qaytish
             </Link>
           </p>
         </div>

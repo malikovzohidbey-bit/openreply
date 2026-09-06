@@ -13,27 +13,27 @@ const TONE_CLASSES: Record<Tone, string> = {
 const MESSAGES: Record<string, { tone: Tone; title: string; detail: string }> = {
   denied: {
     tone: "warning",
-    title: "Instagram connection cancelled",
+    title: "Instagram ulanishi bekor qilindi",
     detail:
-      "You declined the permission prompt on Instagram. Start again and accept all requested permissions.",
+      "Siz Instagram'dagi ruxsat so'rovini rad etdingiz. Qayta boshlang va so'ralgan barcha ruxsatlarni tasdiqlang.",
   },
   invalid: {
     tone: "error",
-    title: "Instagram connection expired",
+    title: "Instagram ulanish muddati tugadi",
     detail:
-      "The login link was missing or older than 10 minutes. Click Connect Instagram to start a fresh attempt.",
+      "Kirish havolasi yo'q edi yoki 10 daqiqadan eski. Qaytadan urinish uchun \"Instagram ulash\" tugmasini bosing.",
   },
   forbidden: {
     tone: "error",
-    title: "Not permitted",
+    title: "Ruxsat berilmagan",
     detail:
-      "Only workspace owners and admins can connect an Instagram account.",
+      "Faqat ish maydoni egalari va administratorlar Instagram akkaunt ulashi mumkin.",
   },
   already_connected: {
     tone: "warning",
-    title: "Account already connected",
+    title: "Akkaunt allaqachon ulangan",
     detail:
-      "That Instagram account is connected to another workspace. Disconnect it there first, or connect a different account.",
+      "Bu Instagram akkaunt boshqa ish maydoniga ulangan. Avval uni o'sha yerdan uzing yoki boshqa akkaunt ulang.",
   },
 };
 
@@ -49,13 +49,12 @@ export function InstagramConnectNotice() {
       .filter(Boolean);
 
     return (
-      <Notice tone="error" title="Instagram app not configured">
+      <Notice tone="error" title="Instagram ilovasi sozlanmagan">
         <p>
-          Set{" "}
           {missing.length > 0
-            ? "these environment variables"
-            : "the required environment variables"}{" "}
-          and restart the server:
+            ? "Quyidagi environment o'zgaruvchilarni"
+            : "Talab qilingan environment o'zgaruvchilarni"}{" "}
+          sozlang va serverni qayta ishga tushiring:
         </p>
         {missing.length > 0 && (
           <ul className="mt-2 space-y-1">
@@ -67,10 +66,10 @@ export function InstagramConnectNotice() {
           </ul>
         )}
         <p className="mt-2">
-          See <span className="font-mono text-xs">docs/setup.md</span> for how to
-          obtain each value. Note that{" "}
-          <span className="font-mono text-xs">ENCRYPTION_KEY</span> must be a
-          64-character hex string.
+          Har bir qiymatni qanday olish haqida{" "}
+          <span className="font-mono text-xs">docs/setup.md</span> ga qarang.
+          Diqqat, <span className="font-mono text-xs">ENCRYPTION_KEY</span> 64
+          belgili hex satr bo'lishi kerak.
         </p>
       </Notice>
     );
@@ -80,11 +79,11 @@ export function InstagramConnectNotice() {
     const reason = searchParams.get("reason");
 
     return (
-      <Notice tone="error" title="Instagram connection failed">
+      <Notice tone="error" title="Instagram ulanishi amalga oshmadi">
         <p>
-          Instagram accepted the login but the connection could not be
-          completed. This is usually a mismatched redirect URI or an app that is
-          missing the required permissions.
+          Instagram kirishni qabul qildi, lekin ulanishni yakunlab bo'lmadi.
+          Odatda buning sababi noto'g'ri redirect URI yoki kerakli
+          ruxsatlarga ega bo'lmagan ilova.
         </p>
         {reason && (
           <p className="mt-2 font-mono text-xs break-words opacity-80">

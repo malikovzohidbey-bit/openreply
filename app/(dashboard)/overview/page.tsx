@@ -27,10 +27,10 @@ function formatDate(iso: string): string {
 }
 
 const COUNT_OPTIONS = [
-  { value: "25", label: "Last 25" },
-  { value: "50", label: "Last 50" },
-  { value: "100", label: "Last 100" },
-  { value: "all", label: "All time" },
+  { value: "25", label: "Oxirgi 25 ta" },
+  { value: "50", label: "Oxirgi 50 ta" },
+  { value: "100", label: "Oxirgi 100 ta" },
+  { value: "all", label: "Barcha vaqt" },
 ];
 
 export default function OverviewPage() {
@@ -54,10 +54,10 @@ export default function OverviewPage() {
           setData(res.data);
           setError(null);
         } else {
-          setError(res.error ?? "Failed to load overview");
+          setError(res.error ?? "Umumiy ko'rinishni yuklab bo'lmadi");
         }
       })
-      .catch(() => setError("Failed to load overview"))
+      .catch(() => setError("Umumiy ko'rinishni yuklab bo'lmadi"))
       .finally(() => setLoading(false));
   }, [selectedAccountId, count]);
 
@@ -93,7 +93,7 @@ export default function OverviewPage() {
             href="/api/instagram/connect"
             className="mt-4 inline-block text-sm text-accent hover:underline"
           >
-            Connect Instagram
+            Instagram ulash
           </a>
         )}
       </div>
@@ -109,25 +109,24 @@ export default function OverviewPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground">Overview</h1>
+          <h1 className="text-lg font-semibold text-foreground">Umumiy ko'rinish</h1>
           <p className="text-sm text-muted mt-1">
-            {data.requestedCount === "all" ? "All-time" : "Recent"} —{" "}
-            {totals.posts} post{totals.posts === 1 ? "" : "s"} from @
-            {data.account.username}
-            {data.truncated ? ` (capped at ${totals.posts})` : ""}
+            {data.requestedCount === "all" ? "Barcha vaqt" : "So'nggi"} —{" "}
+            @{data.account.username} akkauntidan {totals.posts} ta post
+            {data.truncated ? ` (${totals.posts} tagacha)` : ""}
           </p>
           {followers !== null && (
             // Kept out of the tile row below: that row sums the selected posts,
             // whereas this is a current account-level total.
             <p className="mt-1 text-sm text-muted">
-              {followers.toLocaleString()} followers
+              {followers.toLocaleString()} ta obunachi
             </p>
           )}
         </div>
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
           <label className="flex flex-col gap-2 text-sm">
             <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Range
+              Oraliq
             </span>
             <select
               value={count}
@@ -158,29 +157,28 @@ export default function OverviewPage() {
       {!insightsAvailable && (
         <div className="panel rounded p-4 border border-border">
           <p className="text-sm text-foreground">
-            Views, reach, saved and shares need the insights permission.
+            Ko'rishlar, qamrov, saqlanganlar va ulashishlar uchun insights ruxsati kerak.
           </p>
           <p className="text-sm text-muted mt-1">
-            Reconnect your account to grant it — likes and comments are shown in
-            the meantime.
+            Ruxsat berish uchun akkauntingizni qayta ulang — bu orada layklar va izohlar ko'rsatiladi.
           </p>
           <a
             href="/api/instagram/connect"
             className="mt-3 inline-block text-sm text-accent hover:underline"
           >
-            Reconnect Instagram
+            Instagramni qayta ulash
           </a>
         </div>
       )}
 
       {/* Aggregate totals */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <StatCard label="Views" value={formatNumber(totals.views)} />
-        <StatCard label="Reach" value={formatNumber(totals.reach)} />
-        <StatCard label="Likes" value={formatNumber(totals.likes)} />
-        <StatCard label="Comments" value={formatNumber(totals.comments)} />
-        <StatCard label="Saved" value={formatNumber(totals.saved)} />
-        <StatCard label="Shares" value={formatNumber(totals.shares)} />
+        <StatCard label="Ko'rishlar" value={formatNumber(totals.views)} />
+        <StatCard label="Qamrov" value={formatNumber(totals.reach)} />
+        <StatCard label="Layklar" value={formatNumber(totals.likes)} />
+        <StatCard label="Izohlar" value={formatNumber(totals.comments)} />
+        <StatCard label="Saqlanganlar" value={formatNumber(totals.saved)} />
+        <StatCard label="Ulashishlar" value={formatNumber(totals.shares)} />
       </div>
 
       {/* Follower trend — account-level, independent of the post range */}
@@ -188,9 +186,9 @@ export default function OverviewPage() {
 
       {/* Per-post table */}
       <div className="panel rounded p-4 sm:p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Posts</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">Postlar</h2>
         {posts.length === 0 ? (
-          <p className="text-sm text-muted py-8 text-center">No posts found</p>
+          <p className="text-sm text-muted py-8 text-center">Postlar topilmadi</p>
         ) : (
           // Eight metric columns can't compress into a phone; let the table keep
           // its natural width and scroll inside the panel instead.
@@ -199,13 +197,13 @@ export default function OverviewPage() {
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-zinc-500 border-b border-border">
                   <th className="py-2 pr-4 font-medium">Post</th>
-                  <th className="py-2 px-3 font-medium text-right">Views</th>
-                  <th className="py-2 px-3 font-medium text-right">Reach</th>
-                  <th className="py-2 px-3 font-medium text-right">Likes</th>
-                  <th className="py-2 px-3 font-medium text-right">Comments</th>
-                  <th className="py-2 px-3 font-medium text-right">Saved</th>
-                  <th className="py-2 px-3 font-medium text-right">Shares</th>
-                  <th className="py-2 pl-3 font-medium text-right">Date</th>
+                  <th className="py-2 px-3 font-medium text-right">Ko'rishlar</th>
+                  <th className="py-2 px-3 font-medium text-right">Qamrov</th>
+                  <th className="py-2 px-3 font-medium text-right">Layklar</th>
+                  <th className="py-2 px-3 font-medium text-right">Izohlar</th>
+                  <th className="py-2 px-3 font-medium text-right">Saqlanganlar</th>
+                  <th className="py-2 px-3 font-medium text-right">Ulashishlar</th>
+                  <th className="py-2 pl-3 font-medium text-right">Sana</th>
                 </tr>
               </thead>
               <tbody>
@@ -226,7 +224,7 @@ export default function OverviewPage() {
                         </a>
                       ) : (
                         <span className="text-foreground truncate block">
-                          {p.caption || `${p.mediaType} post`}
+                          {p.caption || `${p.mediaType} posti`}
                         </span>
                       )}
                     </td>

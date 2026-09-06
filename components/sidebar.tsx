@@ -10,13 +10,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Overview", href: "/overview" },
-  { label: "Inbox", href: "/inbox" },
-  { label: "Campaigns", href: "/campaigns" },
-  { label: "DM Logs", href: "/logs" },
-  { label: "Settings", href: "/settings" },
-  { label: "Diagnostics", href: "/diagnostics" },
+  { label: "Boshqaruv paneli", href: "/dashboard" },
+  { label: "Umumiy ko'rinish", href: "/overview" },
+  { label: "Kiruvchi xabarlar", href: "/inbox" },
+  { label: "Kampaniyalar", href: "/campaigns" },
+  { label: "DM jurnali", href: "/logs" },
+  { label: "Sozlamalar", href: "/settings" },
+  { label: "Diagnostika", href: "/diagnostics" },
 ];
 
 interface SidebarProps {
@@ -88,7 +88,7 @@ export default function Sidebar({
 
         <div className="px-5 py-4 border-t border-border">
           <p className="text-sm text-foreground truncate">{workspaceName}</p>
-          <p className="text-xs text-muted">Self-hosted</p>
+          <p className="text-xs text-muted">O'z serverida</p>
         </div>
       </aside>
     </>

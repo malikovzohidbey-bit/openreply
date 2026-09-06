@@ -3,13 +3,13 @@
  */
 
 const statusConfig: Record<string, { text: string; label: string }> = {
-  SENT: { text: "text-success", label: "Sent" },
-  FAILED: { text: "text-error", label: "Failed" },
-  PENDING: { text: "text-warning", label: "Pending" },
-  SKIPPED_DEDUP: { text: "text-muted", label: "Dedup" },
-  SKIPPED_RATE_LIMIT: { text: "text-warning", label: "Rate limited" },
-  SKIPPED_PLAN_LIMIT: { text: "text-warning", label: "Skipped" },
-  SKIPPED_NO_MATCH: { text: "text-muted", label: "No match" },
+  SENT: { text: "text-success", label: "Yuborildi" },
+  FAILED: { text: "text-error", label: "Xatolik" },
+  PENDING: { text: "text-warning", label: "Kutilmoqda" },
+  SKIPPED_DEDUP: { text: "text-muted", label: "Takror" },
+  SKIPPED_RATE_LIMIT: { text: "text-warning", label: "Limit tufayli to'xtatildi" },
+  SKIPPED_PLAN_LIMIT: { text: "text-warning", label: "O'tkazib yuborildi" },
+  SKIPPED_NO_MATCH: { text: "text-muted", label: "Mos kelmadi" },
 };
 
 interface StatusBadgeProps {

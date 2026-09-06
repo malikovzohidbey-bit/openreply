@@ -24,14 +24,14 @@ export default function LegalShell({
             href="/login"
             className="text-sm font-semibold text-muted transition hover:text-foreground"
           >
-            Sign in
+            Kirish
           </Link>
         </div>
       </header>
 
       <article className="mx-auto max-w-3xl px-5 py-14">
         <p className="text-sm font-semibold uppercase text-accent">
-          Last updated {updatedAt}
+          Oxirgi yangilanish: {updatedAt}
         </p>
         <h1 className="mt-4 text-4xl font-black text-foreground sm:text-5xl">
           {title}
