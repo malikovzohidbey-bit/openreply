@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import AccountSelect from "@/components/account-select";
 import StatCard from "@/components/stat-card";
 import FollowerChart from "@/components/follower-chart";
+import ReelsInsightsChart from "@/components/reels-insights-chart";
 import type { OverviewResponse } from "@/app/api/instagram/overview/route";
 
 function formatNumber(n: number | null): string {
@@ -24,18 +25,6 @@ function formatNumber(n: number | null): string {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function formatSeconds(sec: number | null): string {
-  if (sec === null) return "—";
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`;
-}
-
-function formatPercent(pct: number | null): string {
-  if (pct === null) return "—";
-  return `${pct.toFixed(0)}%`;
 }
 
 const COUNT_OPTIONS = [
@@ -196,91 +185,27 @@ export default function OverviewPage() {
       {/* Follower trend — account-level, independent of the post range */}
       <FollowerChart data={followerHistory} followers={followers} />
 
-      {/* Reels deep-dive — sorted worst-skip-rate-first, since that's the
-          number that answers "which reel should I redo?" */}
+      {/* Reels deep-dive chart — diagram by default, matching FollowerChart's
+          visual language, with a table toggle for the worst-first detail view. */}
       {(() => {
-        const reels = posts
-          .filter((p) => p.mediaType === "REELS" && p.skipRatePct !== null)
-          .sort((a, b) => (b.skipRatePct ?? 0) - (a.skipRatePct ?? 0));
+        const reels = posts.filter(
+          (p) => p.mediaType === "REELS" && p.skipRatePct !== null
+        );
         if (reels.length === 0) return null;
 
         return (
-          <div className="panel rounded p-4 sm:p-6">
-            <h2 className="text-sm font-semibold text-foreground mb-1">
-              Reels chuqur tahlili
-            </h2>
-            <p className="text-xs text-muted mb-4">
-              "3 soniyada tashlab ketish" eng yuqori bo'lgan reels — birinchi
-              soniyalarni o'zgartirib qayta joylashga arziydi.
-            </p>
-            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-zinc-500 border-b border-border">
-                    <th className="py-2 pr-4 font-medium">Reel</th>
-                    <th className="py-2 px-3 font-medium text-right">
-                      3s'da tashlab ketish
-                    </th>
-                    <th className="py-2 px-3 font-medium text-right">
-                      O'rtacha ko'rish vaqti
-                    </th>
-                    <th className="py-2 px-3 font-medium text-right">
-                      Umumiy ko'rish vaqti
-                    </th>
-                    <th className="py-2 px-3 font-medium text-right">
-                      Ko'rishlar
-                    </th>
-                    <th className="py-2 pl-3 font-medium text-right">Sana</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reels.map((p) => (
-                    <tr key={p.id} className="border-b border-border last:border-0">
-                      <td className="py-3 pr-4 max-w-xs">
-                        {p.permalink ? (
-                          <a
-                            href={p.permalink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-foreground hover:text-accent truncate block"
-                          >
-                            {p.caption || "Reel"}
-                          </a>
-                        ) : (
-                          <span className="text-foreground truncate block">
-                            {p.caption || "Reel"}
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        className={`py-3 px-3 text-right font-medium ${
-                          (p.skipRatePct ?? 0) >= 50
-                            ? "text-error"
-                            : (p.skipRatePct ?? 0) >= 30
-                              ? "text-warning"
-                              : "text-muted"
-                        }`}
-                      >
-                        {formatPercent(p.skipRatePct)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-muted">
-                        {formatSeconds(p.avgWatchTimeSec)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-muted">
-                        {formatSeconds(p.totalWatchTimeSec)}
-                      </td>
-                      <td className="py-3 px-3 text-right text-muted">
-                        {formatNumber(p.views)}
-                      </td>
-                      <td className="py-3 pl-3 text-right text-zinc-500">
-                        {formatDate(p.timestamp)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ReelsInsightsChart
+            data={reels.map((p) => ({
+              id: p.id,
+              caption: p.caption,
+              permalink: p.permalink,
+              timestamp: p.timestamp,
+              skipRatePct: p.skipRatePct as number,
+              avgWatchTimeSec: p.avgWatchTimeSec,
+              totalWatchTimeSec: p.totalWatchTimeSec,
+              views: p.views,
+            }))}
+          />
         );
       })()}
 
