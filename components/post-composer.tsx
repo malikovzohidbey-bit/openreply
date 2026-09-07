@@ -16,6 +16,8 @@ interface DraftItem {
   preview: string | null;
   caption: string;
   isReel: boolean;
+  isTrialReel: boolean;
+  graduationStrategy: "SS_PERFORMANCE" | "MANUAL";
   accountId: string;
 }
 
@@ -26,6 +28,8 @@ function newItem(accountId: string): DraftItem {
     preview: null,
     caption: "",
     isReel: false,
+    isTrialReel: false,
+    graduationStrategy: "SS_PERFORMANCE",
     accountId,
   };
 }
@@ -112,6 +116,12 @@ export default function PostComposer({
         form.set("instagramAccountId", item.accountId);
         form.set("caption", item.caption);
         form.set("isReel", String(item.isReel));
+        if (item.isReel) {
+          form.set("isTrialReel", String(item.isTrialReel));
+          if (item.isTrialReel) {
+            form.set("graduationStrategy", item.graduationStrategy);
+          }
+        }
         if (scheduledAt) form.set("scheduledAt", scheduledAt.toISOString());
 
         const res = await fetch("/api/posts", { method: "POST", body: form });
@@ -213,6 +223,50 @@ export default function PostComposer({
                   />
                   Reels sifatida joylash
                 </label>
+              )}
+
+              {item.isReel && (
+                <div className="space-y-2 rounded-lg border border-border bg-surface px-3 py-2.5">
+                  <label className="flex items-center gap-2 text-sm text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={item.isTrialReel}
+                      onChange={(e) =>
+                        updateItem(item.id, { isTrialReel: e.target.checked })
+                      }
+                    />
+                    Sinov reel (Trial Reel) sifatida joylash
+                  </label>
+                  <p className="text-xs text-muted">
+                    Avval faqat obuna bo'lmaganlarga ko'rsatiladi. Faqat ochiq
+                    (public) va 1000+ obunachisi bo'lgan akkauntlarda ishlaydi.
+                  </p>
+                  {item.isTrialReel && (
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="text-xs text-muted">
+                        Followerlarga qachon chiqadi
+                      </span>
+                      <select
+                        value={item.graduationStrategy}
+                        onChange={(e) =>
+                          updateItem(item.id, {
+                            graduationStrategy: e.target.value as
+                              | "SS_PERFORMANCE"
+                              | "MANUAL",
+                          })
+                        }
+                        className="rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground outline-none focus:border-accent/40"
+                      >
+                        <option value="SS_PERFORMANCE">
+                          Avtomatik (natija yaxshi bo'lsa)
+                        </option>
+                        <option value="MANUAL">
+                          Qo'lda (Instagram ilovasidan)
+                        </option>
+                      </select>
+                    </label>
+                  )}
+                </div>
               )}
 
               <textarea

@@ -61,6 +61,10 @@ export async function POST(request: NextRequest) {
   const caption = form.get("caption");
   const scheduledAtRaw = form.get("scheduledAt");
   const isReel = form.get("isReel") === "true";
+  const isTrialReel = form.get("isTrialReel") === "true";
+  const graduationStrategyRaw = form.get("graduationStrategy");
+  const graduationStrategy =
+    graduationStrategyRaw === "MANUAL" ? "MANUAL" : "SS_PERFORMANCE";
 
   if (!(file instanceof File)) {
     return NextResponse.json({ success: false, error: "Fayl tanlanmagan" }, { status: 400 });
@@ -112,6 +116,8 @@ export async function POST(request: NextRequest) {
       caption: typeof caption === "string" && caption.trim() ? caption.trim() : null,
       scheduledAt,
       status: "SCHEDULED",
+      isTrialReel: mediaType === "REEL" ? isTrialReel : false,
+      graduationStrategy: mediaType === "REEL" && isTrialReel ? graduationStrategy : null,
     },
   });
 

@@ -164,6 +164,10 @@ model Post {
   igMediaId          String?
   containerId        String?
   errorMessage       String?
+  /// Trial Reels: shown only to non-followers first. REEL only.
+  isTrialReel        Boolean    @default(false)
+  /// "SS_PERFORMANCE" (auto-graduates on good engagement) or "MANUAL".
+  graduationStrategy String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 

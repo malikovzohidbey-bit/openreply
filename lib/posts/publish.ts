@@ -49,6 +49,14 @@ export async function publishPost(postId: string): Promise<void> {
       videoUrl: post.mediaType !== "IMAGE" ? mediaUrl : undefined,
       mediaType: post.mediaType === "REEL" ? "REELS" : undefined,
       caption: post.caption ?? undefined,
+      trialReel:
+        post.mediaType === "REEL" && post.isTrialReel
+          ? {
+              graduationStrategy:
+                (post.graduationStrategy as "MANUAL" | "SS_PERFORMANCE") ??
+                "SS_PERFORMANCE",
+            }
+          : undefined,
     });
 
     await prisma.post.update({

@@ -779,6 +779,15 @@ export interface MediaContainerParams {
   caption?: string;
   /** REELS for short-form video; omit for a plain feed image/video. */
   mediaType?: "REELS";
+  /**
+   * Trial Reels: the reel is shown only to non-followers first, and
+   * "graduates" to the normal follower feed based on `graduationStrategy`.
+   * Requires a public account with 1,000+ followers; not supported with
+   * collaborators. REELS only.
+   */
+  trialReel?: {
+    graduationStrategy: "MANUAL" | "SS_PERFORMANCE";
+  };
 }
 
 /**
@@ -796,6 +805,11 @@ export async function createMediaContainer(
   if (params.videoUrl) body.video_url = params.videoUrl;
   if (params.mediaType) body.media_type = params.mediaType;
   if (params.caption) body.caption = params.caption;
+  if (params.trialReel) {
+    body.trial_params = JSON.stringify({
+      graduation_strategy: params.trialReel.graduationStrategy,
+    });
+  }
 
   const response = await fetch(`${instagramGraphBase()}/${igUserId}/media`, {
     method: "POST",
