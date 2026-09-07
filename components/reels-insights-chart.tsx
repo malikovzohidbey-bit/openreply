@@ -91,7 +91,13 @@ function ChartTooltip({
 
 export default function ReelsInsightsChart({ data }: { data: ReelInsightPoint[] }) {
   const [showTable, setShowTable] = useState(false);
-  const [selected, setSelected] = useState<ReelInsightPoint | null>(null);
+  // Held by id, not by value: switching account or date range swaps `data`
+  // out from under us, and a captured object would keep showing the old
+  // reel's numbers under a heading that no longer belongs to this set.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = data.find((p) => p.id === selectedId) ?? null;
+  const setSelected = (point: ReelInsightPoint | null) =>
+    setSelectedId(point?.id ?? null);
 
   const chronological = [...data].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()

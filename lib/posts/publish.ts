@@ -25,19 +25,23 @@ function sleep(ms: number) {
  * the scheduled-posts cron — same code path either way.
  */
 export async function publishPost(postId: string): Promise<void> {
+  // Claim the post atomically before touching Instagram. The cron fires every
+  // minute while a single video can take minutes to publish, so without this
+  // two overlapping runs can both pick up the same SCHEDULED row and publish
+  // it twice — a duplicate post on a real account, which cannot be undone.
+  // Only a row still in SCHEDULED flips to PUBLISHING, and only the caller
+  // that won the flip proceeds.
+  const claimed = await prisma.post.updateMany({
+    where: { id: postId, status: "SCHEDULED" },
+    data: { status: "PUBLISHING", errorMessage: null },
+  });
+  if (claimed.count === 0) return;
+
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: { instagramAccount: true },
   });
   if (!post) return;
-
-  // Already handled (e.g. a retry landed after a previous run succeeded).
-  if (post.status === "PUBLISHED") return;
-
-  await prisma.post.update({
-    where: { id: post.id },
-    data: { status: "PUBLISHING", errorMessage: null },
-  });
 
   try {
     const accessToken = decryptToken(post.instagramAccount.accessToken);

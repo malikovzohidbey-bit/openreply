@@ -12,6 +12,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import PostComposer from "@/components/post-composer";
 import type { AccountOption } from "@/components/account-select";
+import {
+  buildCalendarDays,
+  isSameDay,
+  rangeForDays,
+} from "@/lib/posts/calendar";
 
 type PostStatus = "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
 
@@ -43,22 +48,6 @@ const STATUS_LABEL: Record<PostStatus, string> = {
 
 const WEEKDAYS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
 
-function startOfWeek(date: Date): Date {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7; // Monday = 0
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
 export default function PostsCalendarPage() {
   const [view, setView] = useState<"month" | "week">("month");
   const [cursor, setCursor] = useState(new Date());
@@ -68,17 +57,11 @@ export default function PostsCalendarPage() {
   const [detailPost, setDetailPost] = useState<PostRow | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const range = useMemo(() => {
-    if (view === "week") {
-      const start = startOfWeek(cursor);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 7);
-      return { start, end };
-    }
-    const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-    const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
-    return { start, end };
-  }, [view, cursor]);
+  // The rendered grid, whole weeks at a time. A month view therefore shows a
+  // few days either side of the month itself, and those cells have to be able
+  // to carry dots — so this is also what defines the fetch range below.
+  const days = useMemo(() => buildCalendarDays(view, cursor), [view, cursor]);
+  const range = useMemo(() => rangeForDays(days), [days]);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -116,27 +99,6 @@ export default function PostsCalendarPage() {
     const interval = setInterval(loadPosts, 5000);
     return () => clearInterval(interval);
   }, [posts, loadPosts]);
-
-  const days = useMemo(() => {
-    const start =
-      view === "week" ? range.start : startOfWeek(range.start);
-    const end =
-      view === "week"
-        ? range.end
-        : (() => {
-            const lastOfMonth = new Date(range.end);
-            lastOfMonth.setDate(lastOfMonth.getDate() - 1);
-            const gridEnd = startOfWeek(lastOfMonth);
-            gridEnd.setDate(gridEnd.getDate() + 7);
-            return gridEnd;
-          })();
-
-    const result: Date[] = [];
-    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      result.push(new Date(d));
-    }
-    return result;
-  }, [view, range]);
 
   function postsOnDay(day: Date): PostRow[] {
     return posts.filter((p) => isSameDay(new Date(p.scheduledAt), day));
@@ -315,7 +277,13 @@ export default function PostsCalendarPage() {
               </span>
               <button onClick={() => setDetailPost(null)} className="text-muted hover:text-foreground">✕</button>
             </div>
-            {detailPost.mediaType === "IMAGE" ? (
+            {!detailPost.filePath ? (
+              // Cleared by the weekly cleanup — Instagram still hosts the
+              // published post, we just no longer keep our own copy.
+              <p className="mb-3 rounded-lg border border-border bg-surface-hover/40 px-3 py-4 text-center text-xs text-muted">
+                Media fayl o'chirilgan (chop etilgandan 7 kun keyin avtomatik)
+              </p>
+            ) : detailPost.mediaType === "IMAGE" ? (
               <img src={detailPost.filePath} alt="" className="mb-3 max-h-64 w-full rounded-lg object-cover" />
             ) : (
               <video src={detailPost.filePath} controls className="mb-3 max-h-64 w-full rounded-lg" />

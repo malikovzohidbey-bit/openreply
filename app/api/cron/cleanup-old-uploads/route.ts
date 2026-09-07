@@ -46,6 +46,13 @@ export async function GET(request: NextRequest) {
     } catch {
       // Already gone — fine, nothing left to clean up for this row.
     }
+    // Clear the pointer either way: it keeps this query from re-examining the
+    // same rows every night, and lets the UI say "media deleted" instead of
+    // rendering a player against a URL that now 404s.
+    await prisma.post.update({
+      where: { id: post.id },
+      data: { filePath: "" },
+    });
   }
 
   return NextResponse.json({

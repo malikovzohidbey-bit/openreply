@@ -162,23 +162,31 @@ export async function GET(request: NextRequest) {
       media,
       INSIGHTS_CONCURRENCY,
       async (m) => {
-        const metrics = isReel(m)
-          ? [
-              "views",
-              "reach",
-              "saved",
-              "shares",
-              "total_interactions",
-              "ig_reels_avg_watch_time",
-              "ig_reels_video_view_total_time",
-              "reels_skip_rate",
-            ]
-          : isVideoLike(m)
-            ? ["views", "reach", "saved", "shares", "total_interactions"]
-            : ["reach", "saved", "shares", "total_interactions"];
+        const metrics = isVideoLike(m)
+          ? ["views", "reach", "saved", "shares", "total_interactions"]
+          : ["reach", "saved", "shares", "total_interactions"];
         try {
           const data = await getMediaInsights(accessToken, m.id, metrics);
           insightsAvailable = true;
+
+          // Reels extras go in their own call on purpose. Meta rejects the
+          // whole request when any single metric is invalid for that media,
+          // so bundling them would cost the reel its views/reach/saved too
+          // on any account or post where the watch-time metrics aren't
+          // served. Best effort: if they fail, the rest still shows.
+          if (isReel(m)) {
+            try {
+              const reelsData = await getMediaInsights(accessToken, m.id, [
+                "ig_reels_avg_watch_time",
+                "ig_reels_video_view_total_time",
+                "reels_skip_rate",
+              ]);
+              return { ...data, ...reelsData };
+            } catch {
+              return data;
+            }
+          }
+
           return data;
         } catch (err) {
           if (err instanceof PermissionError) permissionDenied = true;

@@ -3,6 +3,7 @@ import { stat } from "fs/promises";
 import { createReadStream } from "fs";
 import path from "path";
 import { Readable } from "stream";
+import { parseRange } from "@/lib/posts/range";
 
 // Matches the storage location in app/api/posts/route.ts — kept outside
 // /public on purpose (see the comment there for why).
@@ -57,14 +58,22 @@ export async function GET(
     "Cache-Control": "public, max-age=31536000, immutable",
   });
 
-  if (range) {
-    const match = /bytes=(\d+)-(\d*)/.exec(range);
-    const start = match ? parseInt(match[1], 10) : 0;
-    const end = match && match[2] ? parseInt(match[2], 10) : fileStat.size - 1;
-    const chunkSize = end - start + 1;
+  const parsed = parseRange(range, fileStat.size);
 
+  // A start past the end of the file (or a reversed range) would make
+  // createReadStream throw, turning a seek into a 500. HTTP has an answer for
+  // this case, so give it: 416 with the real size.
+  if (parsed.kind === "unsatisfiable") {
+    return new NextResponse(null, {
+      status: 416,
+      headers: { "Content-Range": `bytes */${fileStat.size}` },
+    });
+  }
+
+  if (parsed.kind === "partial") {
+    const { start, end } = parsed;
     headers.set("Content-Range", `bytes ${start}-${end}/${fileStat.size}`);
-    headers.set("Content-Length", String(chunkSize));
+    headers.set("Content-Length", String(end - start + 1));
 
     const stream = createReadStream(filePath, { start, end });
     return new NextResponse(Readable.toWeb(stream) as ReadableStream, {

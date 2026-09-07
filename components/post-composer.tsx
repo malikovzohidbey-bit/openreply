@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AccountOption } from "@/components/account-select";
+import { computeSlot } from "@/lib/posts/schedule";
 
 interface PostComposerProps {
   accounts: AccountOption[];
@@ -138,6 +139,12 @@ export default function PostComposer({
   const [timeOfDay, setTimeOfDay] = useState("12:00");
   const assignedCountRef = useRef(0);
   const pollTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({});
+  // Uploads run one after another, so by the time a later item's turn comes
+  // the state it was queued with may be stale — the person can still edit or
+  // remove anything that hasn't started yet. This mirror lets the loop read
+  // what is on screen now instead of the snapshot taken at click time.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
   function updateItem(id: string, patch: Partial<DraftItem>) {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
@@ -169,20 +176,42 @@ export default function PostComposer({
 
   const pollStatus = useCallback(
     (itemId: string, postId: string) => {
+      let lastStatus: ItemStatus | null = null;
+
+      const stop = () => {
+        clearInterval(pollTimers.current[itemId]);
+        delete pollTimers.current[itemId];
+      };
+
       pollTimers.current[itemId] = setInterval(async () => {
         try {
           const res = await fetch(`/api/posts/${postId}`);
           const json = await res.json();
           if (!json.success) return;
+
           const remoteStatus: ItemStatus = json.data.status;
-          updateItem(itemId, {
-            status: remoteStatus,
-            error: json.data.errorMessage ?? null,
-          });
-          onCreated();
+          if (remoteStatus !== lastStatus) {
+            lastStatus = remoteStatus;
+            updateItem(itemId, {
+              status: remoteStatus,
+              error: json.data.errorMessage ?? null,
+            });
+            // Only on an actual change: the calendar behind the modal doesn't
+            // need a refetch every four seconds while nothing is happening.
+            onCreated();
+          }
+
           if (remoteStatus === "PUBLISHED" || remoteStatus === "FAILED") {
-            clearInterval(pollTimers.current[itemId]);
-            delete pollTimers.current[itemId];
+            stop();
+            return;
+          }
+          // Scheduled for later — nothing will change for hours or days, so
+          // stop watching instead of polling for the life of the modal.
+          if (
+            remoteStatus === "SCHEDULED" &&
+            new Date(json.data.scheduledAt).getTime() > Date.now() + 60_000
+          ) {
+            stop();
           }
         } catch {
           // Transient network hiccup — next tick tries again.
@@ -206,7 +235,9 @@ export default function PostComposer({
         updateItem(item.id, { progress: pct })
       );
       updateItem(item.id, {
-        status: "SCHEDULED",
+        // An immediate post is already being published server-side; calling
+        // that "Rejalashtirilgan" until the first poll lands would read wrong.
+        status: item.plannedAt ? "SCHEDULED" : "uploaded",
         progress: 100,
         postId: created.id,
       });
@@ -227,12 +258,7 @@ export default function PostComposer({
   function assignPlannedAt(): Date | null {
     const orderIndex = assignedCountRef.current;
     assignedCountRef.current += 1;
-    if (orderIndex === 0 && postFirstNow) return null;
-    const [hh, mm] = timeOfDay.split(":").map(Number);
-    const base = new Date(startDate + "T00:00:00");
-    base.setDate(base.getDate() + orderIndex);
-    base.setHours(hh, mm, 0, 0);
-    return base;
+    return computeSlot(orderIndex, { postFirstNow, startDate, timeOfDay });
   }
 
   async function handleSubmit() {
@@ -253,27 +279,49 @@ export default function PostComposer({
     // Sequential: keeps upload order predictable and avoids saturating the
     // connection when someone queues a dozen videos at once.
     for (const { item, plannedAt } of plans) {
-      await runUpload({ ...item, plannedAt });
+      const current = itemsRef.current.find((x) => x.id === item.id);
+      // Removed while it waited its turn, or already handled — either way,
+      // uploading the snapshot would publish something nobody asked for.
+      if (!current || !current.file || current.status !== "idle") continue;
+      await runUpload({ ...current, plannedAt });
     }
   }
 
   async function retryItem(itemId: string) {
-    const item = items.find((it) => it.id === itemId);
+    const item = itemsRef.current.find((it) => it.id === itemId);
     if (!item) return;
-    await runUpload(item);
+
+    // A failed attempt that got as far as creating a row leaves it sitting on
+    // the calendar as a red dot. Retrying uploads a fresh post, so drop the
+    // dead one first instead of accumulating a duplicate per attempt.
+    if (item.postId) {
+      try {
+        await fetch(`/api/posts/${item.postId}`, { method: "DELETE" });
+        onCreated();
+      } catch {
+        // Best effort — a stale FAILED row is better than blocking the retry.
+      }
+    }
+
+    await runUpload({ ...item, postId: null });
   }
 
-  async function saveLink(itemId: string, url: string) {
+  /** Returns an error message to show in the prompt, or null on success. */
+  async function saveLink(itemId: string, url: string): Promise<string | null> {
     const item = items.find((it) => it.id === itemId);
-    if (!item?.postId) return;
-    const res = await fetch(`/api/posts/${item.postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ linkUrl: url }),
-    });
-    const json = await res.json();
-    if (json.success) {
+    if (!item?.postId) return "Post topilmadi";
+    try {
+      const res = await fetch(`/api/posts/${item.postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkUrl: url }),
+      });
+      const json = await res.json();
+      if (!json.success) return json.error ?? "Linkni saqlab bo'lmadi";
       updateItem(itemId, { linkUrl: json.data.linkUrl, linkPromptDismissed: true });
+      return null;
+    } catch {
+      return "Tarmoq xatosi — qayta urinib ko'ring";
     }
   }
 
@@ -549,27 +597,41 @@ function LinkPrompt({
   onSave,
 }: {
   onSkip: () => void;
-  onSave: (url: string) => void;
+  onSave: (url: string) => Promise<string | null>;
 }) {
   const [asking, setAsking] = useState(true);
   const [url, setUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    setError(await onSave(trimmed));
+    setSaving(false);
+  }
 
   if (!asking) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2.5">
-        <input
-          type="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://..."
-          className="flex-1 rounded-lg border border-border bg-surface-hover/40 px-2 py-1.5 text-sm text-foreground outline-none focus:border-accent/40"
-        />
-        <button
-          onClick={() => url.trim() && onSave(url.trim())}
-          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white"
-        >
-          Saqlash
-        </button>
+      <div className="space-y-2 rounded-lg border border-border bg-surface px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://..."
+            className="flex-1 rounded-lg border border-border bg-surface-hover/40 px-2 py-1.5 text-sm text-foreground outline-none focus:border-accent/40"
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          >
+            {saving ? "..." : "Saqlash"}
+          </button>
+        </div>
+        {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
     );
   }

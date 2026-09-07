@@ -39,6 +39,7 @@ echo "[cron] scheduler started, target $BASE_URL"
 
 last_slot=""
 last_daily=""
+last_minute=""
 
 while true; do
   now=$(date -u '+%Y-%m-%d %H:%M')
@@ -46,6 +47,14 @@ while true; do
   hhmm=${now#* }
   hour=${hhmm%:*}
   minute=${hhmm#*:}
+
+  # Every minute: a post scheduled for 14:00 should go out at 14:00, not up to
+  # five minutes late. The route claims each row atomically, so overlapping
+  # runs cannot publish the same post twice.
+  if [ "$last_minute" != "$hhmm" ]; then
+    last_minute="$hhmm"
+    call publish-scheduled-posts
+  fi
 
   # attach-next-reel every 5 minutes rather than once a day: a campaign created
   # before its reel is published stays inert until this binds it, and a daily
@@ -65,6 +74,8 @@ while true; do
     last_daily="$today"
     call refresh-tokens
     call snapshot-followers
+    # Published uploads are dead weight once Instagram hosts its own copy.
+    call cleanup-old-uploads
   fi
 
   # Half a minute: short enough never to skip a slot, long enough to stay idle.

@@ -101,16 +101,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validated before the file is written: bailing out afterwards would leave
+  // an orphaned upload on disk that nothing ever cleans up, since the cleanup
+  // cron only knows about files a Post row points at.
+  let scheduledAt = new Date();
+  if (scheduledAtRaw && typeof scheduledAtRaw === "string") {
+    const parsed = new Date(scheduledAtRaw);
+    if (Number.isNaN(parsed.getTime())) {
+      return NextResponse.json(
+        { success: false, error: "Joylash vaqti noto'g'ri" },
+        { status: 400 }
+      );
+    }
+    scheduledAt = parsed;
+  }
+  const isImmediate = scheduledAt.getTime() <= Date.now() + 5000;
+
   await mkdir(UPLOAD_DIR, { recursive: true });
   const filename = `${randomUUID()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(UPLOAD_DIR, filename), buffer);
   const filePath = `/api/uploads/posts/${filename}`;
-
-  const scheduledAt = scheduledAtRaw && typeof scheduledAtRaw === "string"
-    ? new Date(scheduledAtRaw)
-    : new Date();
-  const isImmediate = scheduledAt.getTime() <= Date.now() + 5000;
 
   const post = await prisma.post.create({
     data: {
