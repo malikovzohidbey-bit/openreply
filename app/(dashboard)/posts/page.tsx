@@ -221,6 +221,20 @@ export default function PostsCalendarPage() {
         </div>
       </div>
 
+      {view === "week" && (
+        <p className="mb-3 text-sm text-muted">
+          Bu hafta:{" "}
+          <span className="font-medium text-foreground">
+            {posts.filter((p) => p.status === "PUBLISHED" && p.mediaType === "REEL").length} ta reels
+          </span>{" "}
+          ·{" "}
+          <span className="font-medium text-foreground">
+            {posts.filter((p) => p.status === "PUBLISHED").length} ta post
+          </span>{" "}
+          chop etildi
+        </p>
+      )}
+
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted">
         {WEEKDAYS.map((w) => (
           <div key={w} className="py-1">{w}</div>

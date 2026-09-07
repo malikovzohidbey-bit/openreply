@@ -168,6 +168,10 @@ model Post {
   isTrialReel        Boolean    @default(false)
   /// "SS_PERFORMANCE" (auto-graduates on good engagement) or "MANUAL".
   graduationStrategy String?
+  /// Optional link the user attaches after the post publishes (shown via a
+  /// post-publish prompt in the composer). Purely informational — not a
+  /// tappable Instagram element, just kept alongside the post for reference.
+  linkUrl            String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
