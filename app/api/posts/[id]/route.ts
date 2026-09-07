@@ -50,7 +50,10 @@ export async function DELETE(
   await prisma.post.delete({ where: { id } });
 
   try {
-    await unlink(path.join(process.cwd(), "public", post.filePath));
+    // filePath is "/api/uploads/posts/<filename>" — the actual file lives
+    // outside /public (see app/api/posts/route.ts for why).
+    const filename = path.basename(post.filePath);
+    await unlink(path.join(process.cwd(), "data", "uploads", "posts", filename));
   } catch {
     // File already gone — fine, the DB row is the source of truth.
   }

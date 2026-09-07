@@ -7,7 +7,12 @@ import { getWorkspaceInstagramAccount } from "@/lib/instagram-accounts";
 import { prisma } from "@/lib/db/client";
 import { publishPost } from "@/lib/posts/publish";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "posts");
+// Deliberately outside /public: Next.js's static file server snapshots
+// /public at boot in this version, so a file dropped there after startup
+// 404s until the process restarts — a non-starter for uploads. Serving these
+// through our own route (app/api/uploads/posts/[filename]) reads from disk
+// on every request instead, so newly uploaded files work immediately.
+const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads", "posts");
 
 // Instagram's own limits are far higher; this just keeps a single self-hosted
 // box from being asked to buffer something absurd in memory.
@@ -100,7 +105,7 @@ export async function POST(request: NextRequest) {
   const filename = `${randomUUID()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(UPLOAD_DIR, filename), buffer);
-  const filePath = `/uploads/posts/${filename}`;
+  const filePath = `/api/uploads/posts/${filename}`;
 
   const scheduledAt = scheduledAtRaw && typeof scheduledAtRaw === "string"
     ? new Date(scheduledAtRaw)

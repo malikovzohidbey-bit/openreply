@@ -44,6 +44,8 @@ next-env.d.ts
 /app/generated/prisma
 .gstack/
 
-# user-uploaded avtopost media (served from /public, not part of the repo)
-/public/uploads/*
-!/public/uploads/.gitkeep
+# user-uploaded avtopost media (served via app/api/uploads, not part of the
+# repo — kept outside /public since Next's static file server here snapshots
+# /public at boot and won't see files added while the process is running)
+/data/uploads/*
+!/data/uploads/.gitkeep
