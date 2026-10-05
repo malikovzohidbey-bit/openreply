@@ -85,6 +85,7 @@ model Workspace {
   webhookEvents     WebhookEvent[]
   operationalEvents OperationalEvent[]
   posts             Post[]
+  xPosts            XPost[]
 
   @@index([ownerId])
 }
@@ -244,6 +245,29 @@ model PostAnalysis {
   updatedAt         DateTime @updatedAt
 
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+/// A text post (optionally with one image) headed to X at `scheduledAt`.
+/// Media is uploaded to X directly from disk, so `mediaPath` only needs to
+/// be readable by this server, not publicly reachable.
+model XPost {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  text         String
+  mediaPath    String?
+  status       PostStatus @default(SCHEDULED)
+  scheduledAt  DateTime
+  publishedAt  DateTime?
+  tweetId      String?
+  errorMessage String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([scheduledAt])
 }
 
 /// Daily follower total for one account. Instagram only retains ~30 days of
