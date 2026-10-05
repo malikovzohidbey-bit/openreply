@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
-import { getCurrentWorkspaceId } from "@/lib/auth";
+import { resolveWorkspaceId } from "@/lib/api-auth";
 import { getWorkspaceInstagramAccount } from "@/lib/instagram-accounts";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 import { publishPost } from "@/lib/posts/publish";
 
@@ -17,6 +18,10 @@ const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads", "posts");
 // Instagram's own limits are far higher; this just keeps a single self-hosted
 // box from being asked to buffer something absurd in memory.
 const MAX_FILE_BYTES = 200 * 1024 * 1024; // 200 MB
+
+// Creator metadata rides along as a JSON string; enough for a transcript
+// excerpt and a handful of fields, small enough never to matter in Postgres.
+const MAX_META_BYTES = 8 * 1024;
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -32,7 +37,7 @@ function mediaTypeFromMime(mime: string, isReel: boolean): "IMAGE" | "VIDEO" | "
 }
 
 export async function GET(request: NextRequest) {
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = await resolveWorkspaceId(request);
   if (!workspaceId) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -55,7 +60,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = await resolveWorkspaceId(request);
   if (!workspaceId) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -70,6 +75,37 @@ export async function POST(request: NextRequest) {
   const graduationStrategyRaw = form.get("graduationStrategy");
   const graduationStrategy =
     graduationStrategyRaw === "MANUAL" ? "MANUAL" : "SS_PERFORMANCE";
+
+  // Who made this post and what they know about it. An external agent (the
+  // Jilo reels pipeline) tags its uploads so the analytics page can tell them
+  // apart from UI uploads and show hook/caption context next to the numbers.
+  const sourceRaw = form.get("source");
+  const source =
+    typeof sourceRaw === "string" && /^[a-z0-9_-]{1,32}$/i.test(sourceRaw.trim())
+      ? sourceRaw.trim().toLowerCase()
+      : null;
+  const metaRaw = form.get("meta");
+  let meta: Prisma.InputJsonObject | null = null;
+  if (typeof metaRaw === "string" && metaRaw.trim()) {
+    if (metaRaw.length > MAX_META_BYTES) {
+      return NextResponse.json(
+        { success: false, error: "meta juda katta (max 8 KB)" },
+        { status: 400 }
+      );
+    }
+    try {
+      const parsed: unknown = JSON.parse(metaRaw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("not an object");
+      }
+      meta = parsed as Prisma.InputJsonObject;
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "meta JSON obyekt bo'lishi kerak" },
+        { status: 400 }
+      );
+    }
+  }
 
   if (!(file instanceof File)) {
     return NextResponse.json({ success: false, error: "Fayl tanlanmagan" }, { status: 400 });
@@ -134,6 +170,8 @@ export async function POST(request: NextRequest) {
       status: "SCHEDULED",
       isTrialReel: mediaType === "REEL" ? isTrialReel : false,
       graduationStrategy: mediaType === "REEL" && isTrialReel ? graduationStrategy : null,
+      source,
+      ...(meta ? { meta } : {}),
     },
   });
 

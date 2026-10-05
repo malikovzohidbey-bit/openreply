@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "fs/promises";
 import path from "path";
+import { resolveWorkspaceId } from "@/lib/api-auth";
 import { getCurrentWorkspaceId } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = await resolveWorkspaceId(request);
   if (!workspaceId) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -63,10 +64,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = await resolveWorkspaceId(request);
   if (!workspaceId) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }

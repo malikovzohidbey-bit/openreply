@@ -172,16 +172,78 @@ model Post {
   /// post-publish prompt in the composer). Purely informational — not a
   /// tappable Instagram element, just kept alongside the post for reference.
   linkUrl            String?
+  /// "jilo" when created by the Jilo reels agent; null for UI-created posts.
+  source             String?
+  /// Creator-supplied metadata (Jilo agent: job, rank, title, durationSec, hookSec, ...).
+  meta               Json?
+  /// Filled by the insights snapshot cron on first capture.
+  permalink          String?
+  thumbnailUrl       String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
   workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   instagramAccount InstagramAccount @relation(fields: [instagramAccountId], references: [id], onDelete: Cascade)
 
+  insightSnapshots MediaInsightSnapshot[]
+  analysis         PostAnalysis?
+
   @@index([workspaceId])
   @@index([instagramAccountId])
   @@index([status])
   @@index([scheduledAt])
+  @@index([source])
+}
+
+/// One point-in-time capture of Instagram insights for a published Post.
+/// Instagram only returns lifetime totals, so growth curves exist only because
+/// the snapshot cron records them here on a cadence (hourly for 48h, then 6h,
+/// then daily, then weekly).
+model MediaInsightSnapshot {
+  id                String   @id @default(cuid())
+  postId            String
+  igMediaId         String
+  capturedAt        DateTime @default(now())
+  views             Int?
+  reach             Int?
+  likes             Int?
+  comments          Int?
+  saved             Int?
+  shares            Int?
+  reposts           Int?
+  totalInteractions Int?
+  /// Milliseconds (Meta's unit).
+  avgWatchTimeMs    Int?
+  /// Milliseconds; Float because lifetime totals overflow Int32.
+  totalWatchTimeMs  Float?
+  /// 0-100.
+  skipRatePct       Float?
+  /// Account follower total at capture time (context for ratios).
+  followersCount    Int?
+  /// Metric groups that failed on this capture: { group: message }.
+  errors            Json?
+  raw               Json
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, capturedAt])
+  @@index([capturedAt])
+}
+
+/// LLM-written "why did it (not) take off" text for a Post. Written by an
+/// external agent through the API; the server only stores and displays it.
+model PostAnalysis {
+  id                String   @id @default(cuid())
+  postId            String   @unique
+  /// UCHDI | ORTACHA | UCHMADI
+  verdict           String
+  text              String
+  model             String?
+  basedOnSnapshotId String?
+  generatedAt       DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 /// Daily follower total for one account. Instagram only retains ~30 days of

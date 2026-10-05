@@ -72,6 +72,39 @@ export function isEmailAllowedToSignIn(
   return allowed.includes(email.toLowerCase());
 }
 
+const MIN_API_KEY_LENGTH = 32;
+
+/**
+ * Optional static key for the posting API.
+ *
+ * Lets an external script call /api/posts without a browser session. Treated
+ * as unset (key auth disabled, session auth untouched) when it is too short to
+ * resist guessing, or when it reuses another secret — a leaked posting key must
+ * not also unlock cron or session signing.
+ */
+export function getPostsApiKey(): string | null {
+  const key = (process.env.POSTS_API_KEY ?? "").trim();
+  if (!key) return null;
+  if (key.length < MIN_API_KEY_LENGTH) {
+    console.warn(
+      `[env] POSTS_API_KEY ignored: must be at least ${MIN_API_KEY_LENGTH} characters`
+    );
+    return null;
+  }
+  if (key === process.env.CRON_SECRET || key === process.env.NEXTAUTH_SECRET) {
+    console.warn(
+      "[env] POSTS_API_KEY ignored: must differ from CRON_SECRET and NEXTAUTH_SECRET"
+    );
+    return null;
+  }
+  return key;
+}
+
+/** The Workspace.id that POSTS_API_KEY requests act on. */
+export function getApiWorkspaceId(): string | null {
+  return (process.env.API_WORKSPACE_ID ?? "").trim() || null;
+}
+
 export const serverEnvSchema = z.object({
   NEXTAUTH_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string().min(16),

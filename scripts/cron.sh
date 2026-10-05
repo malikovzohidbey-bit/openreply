@@ -40,6 +40,7 @@ echo "[cron] scheduler started, target $BASE_URL"
 last_slot=""
 last_daily=""
 last_minute=""
+last_hourly=""
 
 while true; do
   now=$(date -u '+%Y-%m-%d %H:%M')
@@ -67,6 +68,17 @@ while true; do
       fi
       ;;
   esac
+
+  # Once an hour, at :10: the insight snapshot cadence is hourly for a post's
+  # first 48h (see lib/insights/cadence.ts), and the route itself decides which
+  # posts are due. Instagram returns lifetime totals only, so a skipped hour in
+  # that window is a growth-curve point that can never be recovered.
+  # Backgrounded: up to 100 posts × 4 Meta calls can take minutes, and the
+  # publish tick above must not wait behind it.
+  if [ "$minute" = "10" ] && [ "$last_hourly" != "$today $hour" ]; then
+    last_hourly="$today $hour"
+    call snapshot-media-insights &
+  fi
 
   # Once a day, early: the token refresh has a 10-day window before expiry, so
   # the exact hour does not matter — only that it happens every day.

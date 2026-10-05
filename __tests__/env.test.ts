@@ -1,7 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
+  getApiWorkspaceId,
   getEncryptionKeyHex,
   getMetaGraphApiVersion,
+  getPostsApiKey,
   isEmailAllowedToSignIn,
   requireEnv,
 } from "../lib/env";
@@ -58,5 +60,56 @@ describe("sign-in allowlist", () => {
     expect(isEmailAllowedToSignIn(null)).toBe(false);
     expect(isEmailAllowedToSignIn(undefined)).toBe(false);
     expect(isEmailAllowedToSignIn("")).toBe(false);
+  });
+});
+
+describe("posts API key", () => {
+  const VALID_KEY = "0123456789abcdef".repeat(4);
+
+  beforeEach(() => {
+    // Fresh spy per case so the call counts below do not accumulate.
+    vi.restoreAllMocks();
+    vi.stubEnv("CRON_SECRET", "c".repeat(48));
+    vi.stubEnv("NEXTAUTH_SECRET", "n".repeat(48));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  it("is null when POSTS_API_KEY is unset", () => {
+    vi.stubEnv("POSTS_API_KEY", "");
+    expect(getPostsApiKey()).toBeNull();
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("is null when the key is shorter than 32 characters", () => {
+    vi.stubEnv("POSTS_API_KEY", "x".repeat(31));
+    expect(getPostsApiKey()).toBeNull();
+    expect(console.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("is null when the key equals CRON_SECRET", () => {
+    vi.stubEnv("POSTS_API_KEY", "c".repeat(48));
+    expect(getPostsApiKey()).toBeNull();
+    expect(console.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("is null when the key equals NEXTAUTH_SECRET", () => {
+    vi.stubEnv("POSTS_API_KEY", "n".repeat(48));
+    expect(getPostsApiKey()).toBeNull();
+    expect(console.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns a valid 64-hex key, trimmed", () => {
+    vi.stubEnv("POSTS_API_KEY", `  ${VALID_KEY}\n`);
+    expect(getPostsApiKey()).toBe(VALID_KEY);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("reads API_WORKSPACE_ID, null when unset or blank, trimmed otherwise", () => {
+    vi.stubEnv("API_WORKSPACE_ID", "");
+    expect(getApiWorkspaceId()).toBeNull();
+    vi.stubEnv("API_WORKSPACE_ID", "   ");
+    expect(getApiWorkspaceId()).toBeNull();
+    vi.stubEnv("API_WORKSPACE_ID", "  ws_123 ");
+    expect(getApiWorkspaceId()).toBe("ws_123");
   });
 });

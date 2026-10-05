@@ -100,6 +100,8 @@ export interface InstagramMediaInsights {
   saved?: number;
   shares?: number;
   total_interactions?: number;
+  /** Reels only. Times the reel was reposted. */
+  reposts?: number;
   /** Reels only. Milliseconds, per Meta's documented unit for this metric. */
   ig_reels_avg_watch_time?: number;
   /** Reels only. Milliseconds. */
@@ -646,6 +648,26 @@ export async function getMediaInsights(
       entry.values?.[0]?.value ?? 0;
   }
   return result;
+}
+
+/**
+ * Fetch plain fields of a single media object (permalink, thumbnail_url, ...).
+ *
+ * Unlike the insights call this is not a metric lookup: it returns whatever
+ * the Graph API sends back for `fields`, untyped, so the caller picks the
+ * keys it asked for.
+ */
+export async function getMediaFields(
+  accessToken: string,
+  mediaId: string,
+  fields: string[]
+): Promise<Record<string, unknown>> {
+  const url = new URL(`${instagramGraphBase()}/${mediaId}`);
+  url.searchParams.set("fields", fields.join(","));
+  url.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(url.toString());
+  return handleResponse<Record<string, unknown>>(response);
 }
 
 /** One day of net follower change, as reported by account insights. */
