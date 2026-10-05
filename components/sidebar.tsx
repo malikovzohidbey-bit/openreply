@@ -14,6 +14,7 @@ import {
   Inbox,
   Megaphone,
   CalendarDays,
+  Clapperboard,
   ScrollText,
   Settings,
   Stethoscope,
@@ -33,6 +34,7 @@ const navItems = [
   { label: "Kiruvchi xabarlar", href: "/inbox", icon: Inbox },
   { label: "Kampaniyalar", href: "/campaigns", icon: Megaphone },
   { label: "Avtopost", href: "/posts", icon: CalendarDays },
+  { label: "Jilo", href: "/jilo", icon: Clapperboard },
   { label: "X", href: "/x", icon: XLogo },
   { label: "DM jurnali", href: "/logs", icon: ScrollText },
   { label: "Sozlamalar", href: "/settings", icon: Settings },
@@ -110,7 +112,7 @@ export default function Sidebar({
 
         <div className="px-5 py-4 border-t border-border">
           <p className="text-sm text-foreground truncate">{workspaceName}</p>
-          <p className="text-xs text-muted">O'z serverida</p>
+          <p className="text-xs text-muted">O&apos;z serverida</p>
         </div>
       </aside>
     </>
